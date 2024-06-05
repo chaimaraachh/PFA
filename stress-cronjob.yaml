@@ -1,0 +1,18 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: stress-cronjob
+  namespace: myapp
+spec:
+  schedule: "* * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: stress-caller
+            image: curlimages/curl
+            command: ["/bin/sh", "-c"]
+            args: ["for i in {1..6}; do curl -s http://myapp-service.myapp.svc.cluster.local:3000/service/stress?size=$(($RANDOM % 20 + 1)); sleep 10; done"]
+          restartPolicy: OnFailure
+

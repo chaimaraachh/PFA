@@ -1,0 +1,86 @@
+grafana:
+  adminPassword: ${GRAFANA_PASS}
+  defaultDashboardsTimezone: America/Chicago
+  service:
+    type: NodePort
+    nodePort: 30001  # Adding this line
+  ingress:
+    enabled: true
+    hosts:
+      - localhost
+    path: /
+    ingressClassName: nginx
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "250m"
+    limits:
+      memory: "1Gi"
+      cpu: "500m"
+
+prometheus:
+  ingress:
+    enabled: true
+    hosts:
+      - localhost
+    path: /prom
+    ingressClassName: nginx
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+  tlsProxy:
+    enabled: false
+  prometheusSpec:
+    routePrefix: /prom
+    scrapeInterval: "5s"
+    additionalScrapeConfigs:
+      - job_name: ${APP}-pods
+        metrics_path: /service/metrics
+        scrape_interval: 5s
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - ${APP}
+      - job_name: ${APP}-services
+        metrics_path: /service/metrics
+        scrape_interval: 5s
+        kubernetes_sd_configs:
+          - role: service
+            namespaces:
+              names:
+                - ${APP}
+
+alertmanager:
+  ingress:
+    enabled: true
+    hosts:
+      - localhost
+    path: /alert
+    ingressClassName: nginx
+  admissionWebhooks:
+    enabled: false
+    patch:
+      enabled: false
+  tlsProxy:
+    enabled: false
+  alertmanagerSpec:
+    routePrefix: /alert
+
+nodeExporter:
+  enabled: true
+  serviceMonitor:
+    relabelings:
+      - regex: (.+)
+        sourceLabels:
+          - __meta_kubernetes_endpoint_node_name
+        targetLabel: node
+
+kubelet:
+  serviceMonitor:
+    metricRelabelings:
+      - action: replace
+        sourceLabels:
+          - node
+        targetLabel: instance

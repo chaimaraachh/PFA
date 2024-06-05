@@ -1,0 +1,5 @@
+FROM python:3.8-slim
+COPY simulate_memory_usage.py /app/simulate_memory_usage.py
+WORKDIR /app
+RUN pip install requests numpy
+CMD ["python", "simulate_memory_usage.py"]
